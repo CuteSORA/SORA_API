@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🔥 Hentai Video Downloader</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Rubik&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: url('https://imgs.search.brave.com/R4qvuRLpjkKfuJyYi7-Pnd5ZxRkU41cNew12UjVGnlQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93YWxs/cGFwZXJjYXZlLmNv/bS93cC93cDU2MTIw/NTguanBn') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    .overlay {
+      backdrop-filter: blur(10px);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 40px rgba(255, 0, 140, 0.4);
+    }
+
+    .card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      text-shadow: 0 0 10px #ff69b4;
+    }
+
+    .btn-neon {
+      background: linear-gradient(45deg, #ff007f, #ff7f50);
+      color: white;
+      border: none;
+      box-shadow: 0 0 10px #ff007f, 0 0 20px #ff007f;
+      transition: 0.3s;
+    }
+
+    .btn-neon:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 20px #ff69b4, 0 0 30px #ff69b4;
+    }
+
+    .progress-bar {
+      background: linear-gradient(to right, #ff69b4, #ff1493);
+    }
+
+    .anime-gif {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 25px rgba(255, 105, 180, 0.4);
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+    }
+
+    @media (max-width: 576px) {
+      .card-title { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="theme-toggle">
+    <button class="btn btn-outline-light btn-sm" onclick="toggleTheme()">🌓 Theme</button>
+  </div>
+
+  <div class="container my-5">
+    <div class="d-flex align-items-center justify-content-center flex-wrap gap-3 mb-4">
+      <img class="anime-gif" style="height: 150px; width: 150px;" src="https://imgs.search.brave.com/jX9GHpVSD1ZWZ5n8R6P4O5NTiAUwrVV3bDrpglC4csQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9naWZk/Yi5jb20vaW1hZ2Vz/L2hpZ2gva29taS00/OTgteC00OTgtZ2lm/LW0zbzdqemcyN21p/cnU2MGsuZ2lm.gif" alt="sexy anime girl" />
+
+      <h2 class="card-title text-center mb-4">🔥 Waifu Video Downloader</h2>
+
+      <input type="text" id="url" class="form-control mb-3" placeholder="Enter your dirty URL (Phub, Insta, FB, TikTok)" />
+
+      <button onclick="startDownload()" class="btn btn-neon w-100 mb-3">💦 Start Download</button>
+
+      <div class="progress mb-3 d-none" id="progress-container">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar" style="width: 0%"></div>
+      </div>
+
+      <div id="status" class="text-center"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentId = null;
+    let progress = 0;
+    let progressBarInterval = null;
+
+    function startDownload() {
+      const url = document.getElementById("url").value.trim();
+      const statusDiv = document.getElementById("status");
+      const progressContainer = document.getElementById("progress-container");
+      const progressBar = document.getElementById("progress-bar");
+
+      if (!url) {
+        statusDiv.innerHTML = '<div class="alert alert-warning">👀 Enter a valid link, senpai.</div>';
+        return;
+      }
+
+      statusDiv.innerHTML = '<div class="text-info">🔞 Starting your lewd download...</div>';
+      progressContainer.classList.remove("d-none");
+      progressBar.style.width = "0%";
+      progress = 0;
+
+      fetch("/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          statusDiv.innerHTML = `<div class="alert alert-danger">❌ Error: ${data.error}</div>`;
+        } else {
+          currentId = data.id;
+          fakeProgressBar();
+          checkStatus();
+        }
+      })
+      .catch(() => {
+        statusDiv.innerHTML = '<div class="alert alert-danger">❌ Failed to connect to the backend, oni-chan!</div>';
+      });
+    }
+
+    function checkStatus() {
+      fetch("/status/" + currentId)
+      .then(r => r.json())
+      .then(data => {
+        const statusDiv = document.getElementById("status");
+        const progressBar = document.getElementById("progress-bar");
+
+        if (data.status === "ready") {
+          progressBar.style.width = "100%";
+          clearInterval(progressBarInterval);
+          statusDiv.innerHTML = `<div class="alert alert-success">✅ Ready to download: <a class="btn btn-success mt-2" href="${data.download_url}" download>📥 Click to get your juicy file</a></div>`;
+        } else if (data.status === "pending" || data.status === "downloading") {
+          statusDiv.innerHTML = `<div class="text-muted">⏳ Downloading... almost there~</div>`;
+          setTimeout(checkStatus, 3000);
+        } else {
+          statusDiv.innerHTML = `<div class="alert alert-danger">❌ Failed to download your naughty video :(</div>`;
+          clearInterval(progressBarInterval);
+        }
+      });
+    }
+
+    function fakeProgressBar() {
+      const progressBar = document.getElementById("progress-bar");
+      progressBarInterval = setInterval(() => {
+        if (progress < 90) {
+          progress += 5;
+          progressBar.style.width = progress + "%";
+        }
+      }, 400);
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute("data-bs-theme");
+      const next = current === "dark" ? "light" : "dark";
+      html.setAttribute("data-bs-theme", next);
+    }
+  </script>
+</body>
+</html>
